@@ -22,6 +22,7 @@ app.use('/authenticated', authenticate);
 app.listen(port, () => {
     console.log(`Started up at port ${port}`);
 });
+// artificial call to itself. Not clear why...
 setInterval(() => {
     const url = `http://localhost:3000/getPlanesStates`;
     http.get(url);
@@ -35,6 +36,14 @@ app.get('/', (req, res) => {
 
 app.post('/login', (req, res) => {
     const body = _.pick(req.body, ['username', 'password']);
+    /**
+    User.findByCredentials(body.username, body.password)
+    .then(user => user.generateAuthToken())
+    .then((token) => res.header('x-auth', token).send(user))
+    .catch((e) => {
+        res.status(400).send();
+    });
+    **/
     User.findByCredentials(body.username, body.password).then(user => {
         return user.generateAuthToken().then((token) => {
             res.header('x-auth', token).send(user);
@@ -75,6 +84,7 @@ app.get('/authenticated/needsAuth', (req, res, next) => {
 });
 app.get('/authenticated/icaoList', getAllStates, (req, res, next) => {
     const parsedData = res.data.states;
+    // map function is much more suitable in this place
     const icaoNumbersList = parsedData.reduce((accumulator, currentVal) => {
         accumulator.push(currentVal[0]);
         return accumulator;
@@ -90,6 +100,16 @@ app.get('/getState/:icao', getStateByIcao, (req, res, next) => {
 app.post('/authenticated/addIcao/:icao', (req, res, next) => {
     const icao = req.params.icao;
     var user = new User(req.user);
+    /*
+    user.addIcaoNumber(icao)
+        .then(icaoDocumentID => {
+            const planeStates = new PlaneStates({ planeID: icaoDocumentID });
+            return planeStates.save();
+        })
+        .then(() => res.send({ message: `${icao} was successfully added to your profile.` }) )
+        .catch(e => res.status(400).send(e))
+    */
+    
     user.addIcaoNumber(icao).then(icaoDocumentID => {
         const planeStates = new PlaneStates({ planeID: icaoDocumentID });
         planeStates.save().then(() => {
@@ -104,6 +124,7 @@ app.post('/authenticated/addIcao/:icao', (req, res, next) => {
 app.get('/authenticated/getMyIcaoList', (req, res, next) => {
     User.getIcaoList(req.user.username).then((icaoList) => {
         const icaoList_formatted = [];
+        // Use map function instead
         for (const planeObj of icaoList.planes) {
             icaoList_formatted.push(planeObj.icao);
         }
@@ -119,10 +140,14 @@ app.get('/getPlanesStates', async (req, res, next) => {
     for (const planeState of planeStateList) {
         const icao = await User.getIcaoByPlaneID(planeState.planeID);
         const url = `http://localhost:3000/getState/${icao}`;
+        //You are calling yourself just to get some specific data, so you are wasting time on making calls.
+        //Better way just use 'getStateByIcao' function instead of call. And also use Promise all.
         http.get(url, res => {
             res.setEncoding('utf8');
             let rawData = '';
             let planeStatesData;
+            // Response read stream)))))
+            // https://nodejs.org/api/stream.html#stream_class_stream_readable
             res.on('data', chunk => { rawData += chunk; });
             res.on('end', async () => {
                 try {
