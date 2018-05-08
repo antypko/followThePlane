@@ -23,7 +23,7 @@ function getStateByIcao(req, globalResp, next) {
     next();
   });
 }
-
+// this funtion look odd...
 function validateResponse(res) {
   const { statusCode } = res;
   const contentType = res.headers['content-type'];
@@ -39,7 +39,11 @@ function validateResponse(res) {
   if (error) {
     console.error(error.message);
     // consume response data to free up memory
-    res.resume();
+    res.resume(); 
+    // another stream function. You should definitely read about node streams and how to use them. Coz' it looks like it is misused...
+    // https://nodejs.org/api/stream.html#stream_readable_resume
+    
+    // is function 'next()' visible in this place ?
     next();
   }
 }
