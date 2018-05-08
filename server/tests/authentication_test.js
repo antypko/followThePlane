@@ -10,7 +10,10 @@ const auth_helper = require('./helpers/authentication_helper.js');
 describe('Authentication Suite', function () {
     this.timeout(10000);
     let newUser;
+    
+    //Test case without assertions ??? Can you atleast check if it does not throwing an error?
     it('Register a user', (done) => {
+        
         auth_helper.registerUser().then((registeredUser) => {
             newUser=registeredUser;
             done();
