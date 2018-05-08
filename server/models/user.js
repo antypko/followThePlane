@@ -28,6 +28,9 @@ var UserSchema = new mongoose.Schema({
   }]
 });
 
+// Using pre(insert|update|delete|etc) hook is bad practice in general. Justified only in some rare cases.
+// Models should be responsible only for working with rare data, any other pre-computation 
+// or some sort of business logic should be put on service layer.
 UserSchema.pre('save', function (next) {
   var user = this;
   if (user.isModified('password')) {
