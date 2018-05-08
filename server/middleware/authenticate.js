@@ -4,6 +4,15 @@ var bcrypt = require('bcrypt');
 var authenticate = (req, res, next) => {
     var token = req.header('x-auth');
     User.findByToken(token).then((user) => {
+        /* instead of throw error and catch
+        if (user) {
+            req.user = user;
+            req.token = token;
+            return next();
+        }
+        
+        res.status(401).send();
+        */
         if (!user) {
             return Promise.reject();
         }
